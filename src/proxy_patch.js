@@ -117,21 +117,12 @@ module.exports = {
       return mainCode;
     }
 
-    const target = 'main_1.default.initialize();\n    Object.assign(console, main_1.default.functions);';
-    const targetCrlf = 'main_1.default.initialize();\r\n    Object.assign(console, main_1.default.functions);';
-
-    let actualTarget = null;
-    if (mainCode.includes(target)) {
-      actualTarget = target;
-    } else if (mainCode.includes(targetCrlf)) {
-      actualTarget = targetCrlf;
-    }
-
-    if (!actualTarget) {
+    const target = 'Object.assign(console, main_1.default.functions);';
+    if (!mainCode.includes(target)) {
       throw new Error('Main patch anchor not found in main.js');
     }
 
-    const replacement = `${actualTarget}
+    const replacement = `${target}
     /* --- ANTIGRAVITY MAIN PROXY START --- */
     try {
         const detectedProxy = await detectSystemProxyAsync();
@@ -151,7 +142,7 @@ module.exports = {
     }
     /* --- ANTIGRAVITY MAIN PROXY END --- */`;
 
-    let res = mainCode.replace(actualTarget, replacement);
+    let res = mainCode.replace(target, replacement);
     if (!res.includes('function detectSystemProxyAsync()')) {
       res = helperCode + '\n' + res;
     }
