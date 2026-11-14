@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://github.com/xukuncai-hub/antigravity-proxy/stargazers"><img src="https://img.shields.io/github/stars/xukuncai-hub/antigravity-proxy?style=flat-square&logo=github&color=gold" alt="Stars"></a>
   <a href="https://github.com/xukuncai-hub/antigravity-proxy/releases"><img src="https://img.shields.io/github/v/release/xukuncai-hub/antigravity-proxy?style=flat-square&color=blue&logo=github" alt="Release"></a>
-  <img src="https://img.shields.io/badge/Antigravity-v2.31.2%20%E5%AE%8C%E7%BE%8E%E9%80%82%E9%85%8D-brightgreen?style=flat-square" alt="Compatible">
+  <img src="https://img.shields.io/badge/Antigravity-v2.32.1%20%E5%AE%8C%E7%BE%8E%E9%80%82%E9%85%8D-brightgreen?style=flat-square" alt="Compatible">
   <img src="https://img.shields.io/badge/TUN%20Mode-%E5%BD%BB%E5%BA%95%E5%85%8D%E9%99%A4-success?style=flat-square" alt="No TUN Needed">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=flat-square" alt="Platform">
   <a href="https://github.com/xukuncai-hub/antigravity-proxy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xukuncai-hub/antigravity-proxy?style=flat-square" alt="License"></a>

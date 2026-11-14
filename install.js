@@ -9,7 +9,7 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 
 // ANSI 颜色
 const COLOR_RESET = '\x1b[0m';
