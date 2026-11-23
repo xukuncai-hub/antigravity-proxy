@@ -8,24 +8,25 @@ echo   (突破底层 Go 核心代理限制，免 TUN 模式 / 免全局模式)
 echo =======================================================
 echo.
 
-where python >nul 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo [错误] 未检测到 Python 环境！请先安装 Python 3 并将其添加到系统 PATH。
-    echo 官方下载地址: https://www.python.org/
-    pause
-    exit /b 1
-)
-
 where node >nul 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo [错误] 未检测到 Node.js 环境！请先安装 Node.js。
-    echo 官方下载地址: https://nodejs.org/
-    pause
-    exit /b 1
+if %ERRORLEVEL% equ 0 (
+    node "%~dp0install.js" %*
+    goto end
 )
 
-python "%~dp0install.py" %*
+where python >nul 2>nul
+if %ERRORLEVEL% equ 0 (
+    python "%~dp0install.py" %*
+    goto end
+)
 
+echo [错误] 未检测到 Node.js 或 Python 环境！
+echo 请先安装 Node.js (推荐): https://nodejs.org/
+echo 或安装 Python 3: https://www.python.org/
+pause
+exit /b 1
+
+:end
 echo.
 echo 按任意键退出...
 pause >nul
