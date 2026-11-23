@@ -22,7 +22,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 # ANSI 颜色定义
 COLOR_RESET = "\033[0m"
@@ -120,7 +120,7 @@ def ensure_asar_cli():
         return [asar]
     npx = shutil.which("npx")
     if npx:
-        return [npx, "--yes", "@electron/asar"]
+        return [npx, "--yes", "asar"]
     return None
 
 
@@ -146,53 +146,62 @@ def patch_files(extract_dir, src_dir):
     # 1. 注入 dist/languageServer.js
     ls_file = extract_dir / "dist/languageServer.js"
     if ls_file.is_file():
-        ls_code = ls_file.read_text(encoding="utf-8")
-        if "ANTIGRAVITY PROXY AUTO-CONFIGURATION START" not in ls_code:
-            patch_path_json = json.dumps(proxy_patch_file.resolve().as_posix())
-            ls_path_json = json.dumps(ls_file.resolve().as_posix())
-            script = f"""
+        patch_path_json = json.dumps(proxy_patch_file.resolve().as_posix())
+        ls_path_json = json.dumps(ls_file.resolve().as_posix())
+        script = f"""
 const fs = require('fs');
 const patch = require({patch_path_json});
 let code = fs.readFileSync({ls_path_json}, 'utf8');
 code = patch.applyLanguageServer(code);
 fs.writeFileSync({ls_path_json}, code, 'utf8');
 """
-            subprocess.run(["node", "-e", script], check=True)
-            print_info("已注入 LanguageServer 网络代理自适应加速引擎 (dist/languageServer.js)")
-        else:
-            print_info("dist/languageServer.js 代理自适应加速引擎已就绪")
+        subprocess.run(["node", "-e", script], check=True)
+        print_info("已注入/更新 LanguageServer 网络代理自适应加速引擎 (dist/languageServer.js)")
 
     # 2. 注入 dist/main.js
     main_file = extract_dir / "dist/main.js"
     if main_file.is_file():
-        main_code = main_file.read_text(encoding="utf-8")
-        if "ANTIGRAVITY MAIN PROXY START" not in main_code:
-            patch_path_json = json.dumps(proxy_patch_file.resolve().as_posix())
-            main_path_json = json.dumps(main_file.resolve().as_posix())
-            script = f"""
+        patch_path_json = json.dumps(proxy_patch_file.resolve().as_posix())
+        main_path_json = json.dumps(main_file.resolve().as_posix())
+        script = f"""
 const fs = require('fs');
 const patch = require({patch_path_json});
 let code = fs.readFileSync({main_path_json}, 'utf8');
 code = patch.applyMain(code);
 fs.writeFileSync({main_path_json}, code, 'utf8');
 """
-            subprocess.run(["node", "-e", script], check=True)
-            print_info("已注入主进程网络代理自适应引擎 (dist/main.js)")
-        else:
-            print_info("dist/main.js 主进程代理引擎已就绪")
+        subprocess.run(["node", "-e", script], check=True)
+        print_info("已注入/更新主进程内置 PAC 规则分流引擎 (dist/main.js)")
 
 
 def patch_clash_rules():
     """自动检测并配置 Clash / Clash Verge 规则与 DNS，彻底解决必须开启全局模式的问题"""
     try:
-        appdata = os.environ.get("APPDATA")
-        if not appdata:
-            return
+        verge_dirs = []
+        if platform.system() == "Windows":
+            appdata = os.environ.get("APPDATA")
+            if appdata:
+                verge_dirs.extend([
+                    Path(appdata) / "io.github.clash-verge-rev.clash-verge-rev",
+                    Path(appdata) / "clash_verge"
+                ])
+        elif platform.system() == "Linux":
+            home = Path.home()
+            verge_dirs.extend([
+                home / ".local/share/io.github.clash-verge-rev.clash-verge-rev",
+                home / ".config/clash-verge-rev",
+                home / ".config/clash_verge",
+                home / ".config/clash",
+            ])
+        elif platform.system() == "Darwin":
+            home = Path.home()
+            verge_dirs.extend([
+                home / "Library/Application Support/io.github.clash-verge-rev.clash-verge-rev",
+                home / "Library/Application Support/clash-verge",
+            ])
 
-        verge_dirs = [
-            Path(appdata) / "io.github.clash-verge-rev.clash-verge-rev",
-            Path(appdata) / "clash_verge"
-        ]
+        if not verge_dirs:
+            return
 
         antigravity_rules = [
             "DOMAIN-SUFFIX,googleapis.com,{group}",
