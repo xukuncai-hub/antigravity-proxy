@@ -9,7 +9,7 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 
-const VERSION = '1.0.4';
+const VERSION = '1.1.0';
 
 // ANSI 颜色
 const COLOR_RESET = '\x1b[0m';
@@ -142,7 +142,30 @@ function patchClashRules() {
     } catch (_) {}
 }
 
-function install(asarPath) {
+function manageWindowsShortcuts(action, asarPath) {
+    if (os.platform() !== 'win32') return;
+    try {
+        const srcDir = path.join(__dirname, 'src');
+        const psScript = path.join(srcDir, 'win_shortcut.ps1');
+        const vbsScript = path.join(srcDir, 'launch_antigravity.vbs');
+        if (!fs.existsSync(psScript)) return;
+
+        let cmd = `powershell -NoProfile -ExecutionPolicy Bypass -File "${psScript}" -Action ${action} -AsarPath "${asarPath}"`;
+        if (action === 'install' && fs.existsSync(vbsScript)) {
+            cmd += ` -VbsPath "${vbsScript}"`;
+        }
+        const out = execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+        for (const line of out.split(/\r?\n/)) {
+            if (line.startsWith('HOOKED:')) {
+                printInfo(`已接管快捷方式 (更新后自动重注 + 代理注入): ${line.slice(7)}`);
+            } else if (line.startsWith('RESTORED:')) {
+                printInfo(`已还原快捷方式: ${line.slice(9)}`);
+            }
+        }
+    } catch (_) {}
+}
+
+function install(asarPath, noShortcut = false) {
     printInfo(`目标 app.asar 路径: ${asarPath}`);
     const resourcesDir = path.dirname(asarPath);
     const backupPath = path.join(resourcesDir, 'app.asar.proxy_bak');
@@ -178,6 +201,10 @@ function install(asarPath) {
 
         patchClashRules();
 
+        if (!noShortcut) {
+            manageWindowsShortcuts('install', asarPath);
+        }
+
         printSuccess('网络代理自适应引擎安装成功！🎉');
         printInfo('提示: 您现在可以关闭 TUN 模式并切换为规则模式。');
         printInfo('请重新启动 Antigravity 即可生效。');
@@ -195,6 +222,7 @@ function restore(asarPath) {
     }
     printInfo(`正在从备份文件还原: ${backupPath} -> ${asarPath}`);
     fs.copyFileSync(backupPath, asarPath);
+    manageWindowsShortcuts('restore', asarPath);
     printSuccess('已成功还原为修改前版本！🎉');
     printInfo('重启 Antigravity 即可生效。');
 }
@@ -204,9 +232,11 @@ function main() {
     const args = process.argv.slice(2);
     let asarPath = null;
     let isRestore = false;
+    let noShortcut = false;
 
     for (let i = 0; i < args.length; i++) {
         if (args[i] === '--restore') isRestore = true;
+        if (args[i] === '--no-shortcut') noShortcut = true;
         if (args[i] === '--path' && args[i + 1]) asarPath = args[i + 1];
     }
 
@@ -219,7 +249,7 @@ function main() {
     }
 
     if (isRestore) restore(asarPath);
-    else install(asarPath);
+    else install(asarPath, noShortcut);
 }
 
 main();

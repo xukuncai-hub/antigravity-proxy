@@ -68,8 +68,9 @@
 - 🧠 **永久内置 PAC 规则分流引擎 (v1.1.0 重磅)**：直接在 Electron 会话层永久植入原生 PAC 智能分流脚本。仅 Google、Gemini、CloudCode、Antigravity 专线域名走代理，本地开发端口（localhost / 127.0.0.1）与国内主流网站**强制 DIRECT 直连**，反重力自身即具备“永久规则模式”，彻底摆脱对外部代理软件规则配置的依赖；
 - 🔌 **动态注入核心进程网络环境**：在 Antigravity 派生 `language_server.exe` 核心进程时精准注入标准代理环境变量，Electron 会话层自动接管，直接走标准的 HTTP CONNECT 隧道代理；
 - 🛡️ **彻底摆脱 TUN 虚拟网卡**：无需安装或开启虚拟网卡驱动，不占用网络适配器，绝不与 VPN 或工业虚拟网卡冲突；
+- 🔄 **无感抗更新自动重注 (Windows)**：自动接管桌面与开始菜单 `Antigravity` 快捷方式（保留原名称与图标）。每次启动时自动检测 `app.asar` 补丁状态并在进程树注入代理环境变量，官方更新覆盖后无需手动重装即可自动静默恢复；
 - 🌐 **跨平台深度适配 (Linux / Windows / macOS)**：自动为 Clash Verge 注入最高优先级专线分流规则与 DNS 防污染，支持各主流操作系统配置路径与主流 Node.js 环境；
-- 💻 **全平台兼容与无痛还原**：自动备份原版文件，支持一键安全还原。
+- 💻 **全平台兼容与无痛还原**：自动备份原版文件，支持一键安全还原（同步还原快捷方式）。
 
 ---
 
@@ -133,14 +134,18 @@ chmod +x install.sh
 
 ---
 
-## 🔄 一键还原
+## 🔄 一键还原与常用参数
 
-如果你希望恢复为修改前的官方文件：
+如果你希望恢复为修改前的官方文件（同时自动还原被接管的 Windows 快捷方式）：
 
 ```bash
 node install.js --restore
 ```
 *(若安装了 Python 也可运行 `python install.py --restore`)*，或直接将 `resources/app.asar.proxy_bak` 覆盖回 `resources/app.asar`。
+
+**可选参数：**
+- `--no-shortcut`：仅注入 `app.asar` 与 Clash 规则，跳过接管 Windows 桌面/开始菜单快捷方式；
+- `--path <path>`：手动指定 `app.asar` 的绝对路径。
 
 ---
 
@@ -177,7 +182,8 @@ flowchart TD
 
 <details>
 <summary><b>Q3: 每次 Antigravity 官方更新后需要重新执行吗？</b></summary>
-是的。如果官方推送了新版本覆盖了 <code>app.asar</code>，只需重新运行一次 <code>install.bat</code> 即可再次注入生效。
+Windows 用户正常情况下<b>无需手动重新执行</b>。安装脚本已自动接管桌面与开始菜单的 <code>Antigravity</code> 快捷方式，下次点击启动时会自动检测 <code>app.asar</code> 是否被更新覆盖，并在后台静默重注后启动。<br>
+（仅当官方大版本安装包把桌面/开始菜单快捷方式也重置回原版，或你是 macOS / Linux 用户时，再重新运行一次安装脚本即可。）
 </details>
 
 ---

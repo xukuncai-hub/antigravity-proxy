@@ -324,7 +324,41 @@ def patch_clash_rules():
         pass
 
 
-def install(asar_path):
+def manage_windows_shortcuts(action, asar_path):
+    """在 Windows 上接管或还原桌面与开始菜单快捷方式，实现版本更新后自动检测重注"""
+    if platform.system() != "Windows":
+        return
+    try:
+        src_dir = Path(__file__).resolve().parent / "src"
+        ps_script = src_dir / "win_shortcut.ps1"
+        vbs_script = src_dir / "launch_antigravity.vbs"
+        if not ps_script.is_file():
+            return
+        cmd = [
+            "powershell",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(ps_script),
+            "-Action",
+            action,
+            "-AsarPath",
+            str(asar_path),
+        ]
+        if action == "install" and vbs_script.is_file():
+            cmd.extend(["-VbsPath", str(vbs_script)])
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        for line in (res.stdout or "").splitlines():
+            if line.startswith("HOOKED:"):
+                print_info(f"已接管快捷方式 (更新后自动重注 + 代理注入): {line[7:]}")
+            elif line.startswith("RESTORED:"):
+                print_info(f"已还原快捷方式: {line[9:]}")
+    except Exception:
+        pass
+
+
+def install(asar_path, no_shortcut=False):
     print_info(f"目标 app.asar 路径: {asar_path}")
     asar_cmd = ensure_asar_cli()
     if not asar_cmd:
@@ -374,6 +408,9 @@ def install(asar_path):
         # 智能适配 Clash Verge 分流规则 (免 TUN 模式 & 免全局模式)
         patch_clash_rules()
 
+        if not no_shortcut:
+            manage_windows_shortcuts("install", asar_path)
+
         unpacked_src = temp_dir / "app.asar.unpacked"
         unpacked_dest = resources_dir / "app.asar.unpacked"
         if unpacked_src.exists() and unpacked_dest.exists():
@@ -398,6 +435,7 @@ def restore(asar_path):
 
     print_info(f"正在从备份文件还原: {backup_path} -> {asar_path}")
     shutil.copy2(backup_path, asar_path)
+    manage_windows_shortcuts("restore", asar_path)
     print_success("已成功还原为修改前版本！🎉")
     print_info("重启 Antigravity 即可生效。")
 
@@ -408,6 +446,7 @@ def main():
     parser = argparse.ArgumentParser(description="Antigravity 网络代理智能适配安装脚本 (免 TUN / 免全局)")
     parser.add_argument("--path", type=str, help="手动指定 app.asar 的文件绝对路径")
     parser.add_argument("--restore", action="store_true", help="还原为修改前原版")
+    parser.add_argument("--no-shortcut", action="store_true", help="跳过 Windows 快捷方式接管")
     args = parser.parse_args()
 
     asar_path = Path(args.path) if args.path else detect_asar_path()
@@ -420,7 +459,7 @@ def main():
     if args.restore:
         restore(asar_path)
     else:
-        install(asar_path)
+        install(asar_path, no_shortcut=args.no_shortcut)
 
 
 if __name__ == "__main__":
